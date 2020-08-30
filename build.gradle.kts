@@ -26,4 +26,14 @@ tasks {
         sourceCompatibility = JavaVersion.VERSION_1_8.toString()
         targetCompatibility = sourceCompatibility
     }
+
+    javadoc {
+        val opt = options as StandardJavadocDocletOptions
+        opt.addStringOption("Xdoclint:none", "-quiet")
+
+        opt.encoding("UTF-8")
+        opt.charSet("UTF-8")
+        opt.source("8")
+        opt.links("https://docs.oracle.com/javase/8/docs/api/")
+    }
 }
