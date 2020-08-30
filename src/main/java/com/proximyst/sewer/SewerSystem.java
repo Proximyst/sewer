@@ -9,6 +9,8 @@ import com.proximyst.sewer.piping.PipeResult.Success;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -107,6 +109,7 @@ public class SewerSystem<Input, Output> {
    * @return A {@link PipeResult} with filters, flow, and exceptions taken into account.
    */
   @SuppressWarnings("unchecked")
+  @NonNull
   public PipeResult<Output> pump(Input input) {
     PipeResult<?> underways = null;
     for (SewerPipe<?, ?> pipe : pipeline) {
@@ -115,19 +118,72 @@ public class SewerSystem<Input, Output> {
         continue;
       }
 
-      if (underways.isSuccessful()) {
-        underways = ((SewerPipe<Object, ?>) pipe).flow(((Success<Object>) underways).getResult());
-      } else if (underways.isExceptional()) {
-        handleException((Exceptional<?>) underways);
-        return (PipeResult<Output>) underways;
-      } else if (underways.isFiltered()) {
-        return (PipeResult<Output>) underways;
-      } else {
-        throw new IllegalStateException("PipeResult type " + underways.getClass().getName() + " is unknown");
-      }
+      underways = handleUnderways(underways, pipe);
     }
 
+    assert underways != null;
     return (PipeResult<Output>) underways;
+  }
+
+  /**
+   * Pump an {@link Input} through this system's {@link SewerPipe pipes}.
+   *
+   * @param input The input to flow through this system.
+   * @return A {@link PipeResult} with filters, flow, and exceptions taken into account, wrapped tidily in a {@link
+   * CompletableFuture}.
+   */
+  @SuppressWarnings("unchecked")
+  @NonNull
+  public CompletableFuture<PipeResult<Output>> pumpAsync(Input input, @Nullable Executor executor) {
+    CompletableFuture<PipeResult<?>> underways = null;
+    for (SewerPipe<?, ?> pipe : pipeline) {
+      if (underways == null) {
+        underways = executor == null
+            ? CompletableFuture.supplyAsync(() -> ((SewerPipe<Input, ?>) pipe).flow(input))
+            : CompletableFuture.supplyAsync(() -> ((SewerPipe<Input, ?>) pipe).flow(input), executor);
+        continue;
+      }
+
+      underways = executor == null
+          ? underways.thenApplyAsync(res -> this.handleUnderways(res, pipe))
+          : underways.thenApplyAsync(res -> this.handleUnderways(res, pipe), executor);
+    }
+
+    assert underways != null;
+    return (CompletableFuture<PipeResult<Output>>) (CompletableFuture<?>) underways;
+  }
+
+  /**
+   * Pump an {@link Input} through this system's {@link SewerPipe pipes}.
+   *
+   * @param input The input to flow through this system.
+   * @return A {@link PipeResult} with filters, flow, and exceptions taken into account, wrapped tidily in a {@link
+   * CompletableFuture}.
+   */
+  @NonNull
+  public CompletableFuture<PipeResult<Output>> pumpAsync(Input input) {
+    return pumpAsync(input, null);
+  }
+
+  /**
+   * Handle the application of a pipe onto an existing {@link PipeResult}.
+   *
+   * @param result The existing {@link PipeResult}.
+   * @param pipe   The pipe to let the result flow through.
+   * @return The new result of the pipe flowed through.
+   */
+  @SuppressWarnings("unchecked")
+  private PipeResult<?> handleUnderways(@NonNull PipeResult<?> result, @NonNull SewerPipe<?, ?> pipe) {
+    if (result.isSuccessful()) {
+      return ((SewerPipe<Object, ?>) pipe).flow(((Success<Object>) result).getResult());
+    } else if (result.isExceptional()) {
+      handleException((Exceptional<?>) result);
+      return result;
+    } else if (result.isFiltered()) {
+      return result;
+    } else {
+      throw new IllegalStateException("PipeResult type " + result.getClass().getName() + " is unknown");
+    }
   }
 
   /**
@@ -241,6 +297,10 @@ public class SewerSystem<Input, Output> {
      * @return A new {@link SewerSystem} akin this builder.
      */
     public SewerSystem<Input, Output> build() {
+      if (this.pipeline.isEmpty()) {
+        throw new IllegalStateException("a system requires a pipeline with pipes");
+      }
+
       return new SewerSystem<>(
           Collections.unmodifiableList(new ArrayList<>(this.pipeline)),
           this.exceptionHandler
