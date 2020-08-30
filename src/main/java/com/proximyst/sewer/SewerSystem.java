@@ -222,7 +222,7 @@ public class SewerSystem<Input, Output> {
 
     /**
      * Set the exception handler for the system.
-     * <p/>
+     * <p>
      * This does not delegate to the old handler.
      *
      * @param consumer The new exception handler.
@@ -235,7 +235,7 @@ public class SewerSystem<Input, Output> {
 
     /**
      * Build the {@link SewerSystem} with the pipes attached.
-     * <p/>
+     * <p>
      * This clones the pipeline, and the builder may therefore be used again after the call.
      *
      * @return A new {@link SewerSystem} akin this builder.

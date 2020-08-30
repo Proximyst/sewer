@@ -53,7 +53,7 @@ public class PipeResult<T> {
 
   /**
    * Constructs a new result which stopped after running due to its filters.
-   * <p/>
+   * <p>
    * The flow of the pipe is still ran, but it will not continue to the next pipe or return if successful.
    *
    * @param pipeName The pipe whose return was stopped.
