@@ -295,6 +295,7 @@ public class SewerSystem<Input, Output> {
      * This clones the pipeline, and the builder may therefore be used again after the call.
      *
      * @return A new {@link SewerSystem} akin this builder.
+     * @throws IllegalStateException If a system is built with no pipes.
      */
     public SewerSystem<Input, Output> build() {
       if (this.pipeline.isEmpty()) {
