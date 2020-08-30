@@ -1,6 +1,6 @@
 # sewer
 
-[![CodeFactor](https://www.codefactor.io/repository/github/Proximyst/sewer/badge/master)](https://www.codefactor.io/repository/github/Proximyst/sewer/overview/master)
+[![CodeFactor](https://www.codefactor.io/repository/github/proximyst/sewer/badge/master)](https://www.codefactor.io/repository/github/proximyst/sewer/overview/master)
 
 *sewer: "where the shit goes down"*
 
