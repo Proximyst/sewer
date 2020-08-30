@@ -14,9 +14,10 @@ jobs:
         with:
           java-version: 8
       - name: Publish
-        run: ./gradlew build javadoc test publish
+        run: ./gradlew build javadoc test bintrayUpload
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+          BINTRAY_KEY: ${{ secrets.BINTRAY_KEY }}
       - name: Deploy javadoc
         uses: JamesIves/github-pages-deploy-action@3.5.9
         with:

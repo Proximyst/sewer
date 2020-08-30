@@ -1,8 +1,11 @@
+import com.jfrog.bintray.gradle.BintrayExtension
+
 plugins {
     java
     `java-library`
     id("org.checkerframework") version "0.5.9"
     `maven-publish`
+    id("com.jfrog.bintray") version "1.8.5"
 }
 
 group = "com.proximyst"
@@ -39,22 +42,56 @@ tasks {
     }
 }
 
-if (System.getenv("GITHUB_TOKEN") != null) {
+if (System.getenv("BINTRAY_USER") != null) {
+    bintray {
+        user = System.getenv("BINTRAY_USER")
+        key = System.getenv("BINTRAY_KEY")
+
+        publish = true
+        override = true
+        setPublications("maven")
+
+        pkg(delegateClosureOf<BintrayExtension.PackageConfig> {
+            repo = "sewer"
+            name = "sewer"
+            userOrg = "proximyst"
+            setLicenses("LGPL-3.0")
+            vcsUrl = "https://github.com/Proximyst/sewer"
+
+            version(delegateClosureOf<BintrayExtension.VersionConfig> {
+                name = "${rootProject.version}"
+            })
+        })
+    }
+
     publishing {
         publications {
             create<MavenPublication>("maven") {
+                groupId = "${rootProject.group}"
+                artifactId = rootProject.name
+                version = "${rootProject.version}"
                 from(components["java"])
-            }
-        }
 
-        repositories {
-            maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/proximyst/sewer")
+                pom {
+                    licenses {
+                        license {
+                            name.set("GNU Lesser Public License, Version 3.0")
+                            url.set("https://www.gnu.org/licenses/lgpl-3.0.html")
+                            distribution.set("repo")
+                        }
+                    }
 
-                credentials {
-                    username = System.getenv("GITHUB_ACTOR")
-                    password = System.getenv("GITHUB_TOKEN")
+                    developers {
+                        developer {
+                            id.set("Proximyst")
+                            name.set("Mariell Hoversholm")
+                            email.set("proximyst@proximy.st")
+                        }
+                    }
+
+                    scm {
+                        url.set("https://github.com/Proximyst/sewer")
+                    }
                 }
             }
         }

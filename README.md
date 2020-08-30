@@ -10,13 +10,13 @@ cleaner code.
 
 ## Dependency
 
-The library is available on GitHub Packages:
+The library is available on Bintray:
 
 ```kotlin
-val sewerVersion = "find the latest version in the sidebar"
+val sewerVersion = "0.1.0"
 
 repositories {
-    maven("https://maven.pkg.github.com/proximyst/sewer")
+    maven("https://dl.bintray.com/proximyst/sewer")
 }
 
 dependencies {
