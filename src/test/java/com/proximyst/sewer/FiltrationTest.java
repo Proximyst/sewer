@@ -22,6 +22,13 @@ public class FiltrationTest {
     Assert.assertTrue(result.isSuccessful());
     Assert.assertEquals(result.asSuccess().getResult().intValue(), -42);
 
+    system = SewerSystem
+        .<Integer, Integer>builder("post-filter", Math::abs, null, Filters.NEGATIVE)
+        .build();
+    result = system.pump(-5);
+    Assert.assertTrue(result.isFiltered());
+    Assert.assertTrue(result instanceof PipeResult.PostFilter);
+
     system = SewerSystem.<Integer, Integer>builder("never successful", i -> {
       throw new RuntimeException();
     }).build();
