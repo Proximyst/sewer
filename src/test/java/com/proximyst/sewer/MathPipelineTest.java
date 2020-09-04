@@ -15,4 +15,18 @@ public class MathPipelineTest {
     Assert.assertEquals(result.asSuccess().getResult().longValue(), 60516L);
     Assert.assertThrows(ClassCastException.class, result::asExceptional);
   }
+
+  @Test
+  public void multiplicationWithInnerPipeline() {
+    PipeResult<Long> result = SewerSystem.<Integer, Long>builder("double", i -> i * 2L)
+        .pipe("third", i -> i / 3)
+        .pipe("square", SewerSystem.<Long, Long>builder("triple", i -> i * 3)
+            .pipe("square", i -> i * i)
+            .build())
+        .build()
+        .pump(123);
+    Assert.assertTrue(result.isSuccessful());
+    Assert.assertEquals(result.asSuccess().getResult().longValue(), 60516L);
+    Assert.assertThrows(ClassCastException.class, result::asExceptional);
+  }
 }

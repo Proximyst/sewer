@@ -277,6 +277,61 @@ public class SewerSystem<Input, Output> {
     }
 
     /**
+     * Attach a system as a pipe to the system.
+     *
+     * @param pipeName    The name of the pipe to attach.
+     * @param pipeline    The pipeline to attach as if it is a pipe. This must take an instance of {@link Output} as
+     *                    input.
+     * @param <NewOutput> The new output for the system.
+     * @return This builder with the new pipe attached.
+     */
+    public <NewOutput> Builder<Input, NewOutput> pipe(
+        @NonNull String pipeName,
+        @NonNull SewerSystem<Output, NewOutput> pipeline
+    ) {
+      return this.pipe(pipeName, pipeline, null, null);
+    }
+
+    /**
+     * Attach a system as a pipe to the system.
+     *
+     * @param pipeName      The name of the pipe to attach.
+     * @param pipeline      The pipeline to attach as if it is a pipe. This must take an instance of {@link Output} as
+     *                      input.
+     * @param preFlowFilter The filter to run before the pipe. May be {@code null}.
+     * @param <NewOutput>   The new output for the system.
+     * @return This builder with the new pipe attached.
+     */
+    public <NewOutput> Builder<Input, NewOutput> pipe(
+        @NonNull String pipeName,
+        @NonNull SewerSystem<Output, NewOutput> pipeline,
+        @Nullable FiltrationModule<Output> preFlowFilter
+    ) {
+      return this.pipe(pipeName, pipeline, preFlowFilter, null);
+    }
+
+    /**
+     * Attach a system as a pipe to the system.
+     *
+     * @param pipeName       The name of the pipe to attach.
+     * @param pipeline       The pipeline to attach as if it is a pipe. This must take an instance of {@link Output} as
+     *                       input.
+     * @param preFlowFilter  The filter to run before the pipe. May be {@code null}.
+     * @param postFlowFilter The filter to run after the pipe. May be {@code null}.
+     * @param <NewOutput>    The new output for the system.
+     * @return This builder with the new pipe attached.
+     */
+    public <NewOutput> Builder<Input, NewOutput> pipe(
+        @NonNull String pipeName,
+        @NonNull SewerSystem<Output, NewOutput> pipeline,
+        @Nullable FiltrationModule<Output> preFlowFilter,
+        @Nullable FiltrationModule<NewOutput> postFlowFilter
+    ) {
+      return this.pipe(new SystemPipe<>(pipeName, preFlowFilter, postFlowFilter, pipeline))
+          .pipe(pipeName + " (SystemPipe)", res -> res.asSuccess().getResult());
+    }
+
+    /**
      * Set the exception handler for the system.
      * <p>
      * This does not delegate to the old handler.
