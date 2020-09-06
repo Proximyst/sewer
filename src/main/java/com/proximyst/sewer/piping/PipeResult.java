@@ -1,6 +1,7 @@
 package com.proximyst.sewer.piping;
 
 import java.util.Objects;
+import java.util.Optional;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
@@ -121,6 +122,23 @@ public class PipeResult<T> {
     // We want a ClassCastException here.
     // If the user has not first ran #isExceptional, that is on them...
     return (Exceptional<T>) this;
+  }
+
+  /**
+   * Converts this to an {@link Optional}.
+   * <p>
+   * This will <i>swallow</i> any {@code null}s as {@link Optional#empty()}!
+   *
+   * @return An {@link Optional} of the result from this. This is only non-empty if {@link #isSuccessful() this is
+   * successful} and {@link Success#getResult() the result} is non-{@code null}.
+   */
+  @NonNull
+  public Optional<@NonNull T> asOptional() {
+    if (!isSuccessful()) {
+      return Optional.empty();
+    }
+
+    return Optional.ofNullable(asSuccess().getResult());
   }
 
   /**

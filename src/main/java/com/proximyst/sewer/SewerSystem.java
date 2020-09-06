@@ -49,6 +49,7 @@ public class SewerSystem<Input, Output> {
    * @param <Output> The output to expect from the initial pipe.
    * @return A new {@link Builder} to create a new {@link SewerSystem}.
    */
+  @NonNull
   public static <Input, Output> Builder<Input, Output> builder(
       @NonNull String pipeName,
       @NonNull PipeHandler<Input, Output> handler
@@ -66,6 +67,7 @@ public class SewerSystem<Input, Output> {
    * @param <Output>      The output to expect from the initial pipe.
    * @return A new {@link Builder} to create a new {@link SewerSystem}.
    */
+  @NonNull
   public static <Input, Output> Builder<Input, Output> builder(
       @NonNull String pipeName,
       @NonNull PipeHandler<Input, Output> handler,
@@ -85,6 +87,7 @@ public class SewerSystem<Input, Output> {
    * @param <Output>       The output to expect from the initial pipe.
    * @return A new {@link Builder} to create a new {@link SewerSystem}.
    */
+  @NonNull
   public static <Input, Output> Builder<Input, Output> builder(
       @NonNull String pipeName,
       @NonNull PipeHandler<Input, Output> handler,
@@ -172,6 +175,7 @@ public class SewerSystem<Input, Output> {
    * @param pipe   The pipe to let the result flow through.
    * @return The new result of the pipe flowed through.
    */
+  @NonNull
   @SuppressWarnings("unchecked")
   private PipeResult<?> handleUnderways(@NonNull PipeResult<?> result, @NonNull SewerPipe<?, ?> pipe) {
     if (result.isSuccessful()) {
@@ -218,6 +222,7 @@ public class SewerSystem<Input, Output> {
      * @param <NewOutput> The new output for the system.
      * @return This builder with the new pipe attached.
      */
+    @NonNull
     @SuppressWarnings("unchecked")
     public <NewOutput> Builder<Input, NewOutput> pipe(@NonNull SewerPipe<Output, NewOutput> pipe) {
       this.pipeline.add(pipe);
@@ -233,6 +238,7 @@ public class SewerSystem<Input, Output> {
      * @param <NewOutput> The new output for the system.
      * @return This builder with the new pipe attached.
      */
+    @NonNull
     public <NewOutput> Builder<Input, NewOutput> pipe(
         @NonNull String pipeName,
         @NonNull PipeHandler<Output, NewOutput> handler
@@ -249,6 +255,7 @@ public class SewerSystem<Input, Output> {
      * @param <NewOutput>   The new output for the system.
      * @return This builder with the new pipe attached.
      */
+    @NonNull
     public <NewOutput> Builder<Input, NewOutput> pipe(
         @NonNull String pipeName,
         @NonNull PipeHandler<Output, NewOutput> handler,
@@ -267,6 +274,7 @@ public class SewerSystem<Input, Output> {
      * @param <NewOutput>    The new output for the system.
      * @return This builder with the new pipe attached.
      */
+    @NonNull
     public <NewOutput> Builder<Input, NewOutput> pipe(
         @NonNull String pipeName,
         @NonNull PipeHandler<Output, NewOutput> handler,
@@ -285,6 +293,7 @@ public class SewerSystem<Input, Output> {
      * @param <NewOutput> The new output for the system.
      * @return This builder with the new pipe attached.
      */
+    @NonNull
     public <NewOutput> Builder<Input, NewOutput> pipe(
         @NonNull String pipeName,
         @NonNull SewerSystem<Output, NewOutput> pipeline
@@ -302,6 +311,7 @@ public class SewerSystem<Input, Output> {
      * @param <NewOutput>   The new output for the system.
      * @return This builder with the new pipe attached.
      */
+    @NonNull
     public <NewOutput> Builder<Input, NewOutput> pipe(
         @NonNull String pipeName,
         @NonNull SewerSystem<Output, NewOutput> pipeline,
@@ -321,6 +331,7 @@ public class SewerSystem<Input, Output> {
      * @param <NewOutput>    The new output for the system.
      * @return This builder with the new pipe attached.
      */
+    @NonNull
     public <NewOutput> Builder<Input, NewOutput> pipe(
         @NonNull String pipeName,
         @NonNull SewerSystem<Output, NewOutput> pipeline,
@@ -339,6 +350,7 @@ public class SewerSystem<Input, Output> {
      * @param consumer The new exception handler.
      * @return This builder with the new exception handler attached.
      */
+    @NonNull
     public Builder<Input, Output> exceptionHandler(@NonNull Consumer<Exceptional<?>> consumer) {
       this.exceptionHandler = consumer;
       return this;
@@ -352,6 +364,7 @@ public class SewerSystem<Input, Output> {
      * @return A new {@link SewerSystem} akin this builder.
      * @throws IllegalStateException If a system is built with no pipes.
      */
+    @NonNull
     public SewerSystem<Input, Output> build() {
       if (this.pipeline.isEmpty()) {
         throw new IllegalStateException("a system requires a pipeline with pipes");
