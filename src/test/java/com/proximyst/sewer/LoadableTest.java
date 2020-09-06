@@ -10,7 +10,12 @@ public class LoadableTest {
   public void basicLoading() {
     Loadable<String> loadable = Loadable
         .builder(
-            SewerSystem.builder("string", name -> "Hello, " + name + "!").build(),
+            SewerSystem.builder("string", name -> "Hello, " + name + "!")
+                .pipe("wait", s -> {
+                  Thread.sleep(50);
+                  return s;
+                })
+                .build(),
             "Anton"
         )
         .build();
