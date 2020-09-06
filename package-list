@@ -1,4 +1,5 @@
 com.proximyst.sewer
 com.proximyst.sewer.filtration
 com.proximyst.sewer.leakage
+com.proximyst.sewer.loadable
 com.proximyst.sewer.piping
