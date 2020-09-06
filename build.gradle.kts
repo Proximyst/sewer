@@ -31,6 +31,11 @@ tasks {
         targetCompatibility = sourceCompatibility
     }
 
+    compileTestJava {
+        sourceCompatibility = JavaVersion.VERSION_1_8.toString()
+        targetCompatibility = sourceCompatibility
+    }
+
     javadoc {
         val opt = options as StandardJavadocDocletOptions
         opt.addStringOption("Xdoclint:none", "-quiet")

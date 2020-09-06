@@ -16,10 +16,10 @@ public class LoadableTest {
         .build();
 
     Assert.assertFalse(loadable.isLoaded());
-    Assert.assertTrue(loadable.getIfPresent().isEmpty());
+    Assert.assertFalse(loadable.getIfPresent().isPresent());
     Assert.assertFalse(loadable.getOrLoad().isDone());
     Assert.assertTrue(loadable.getOrLoad().join().isPresent());
-    Assert.assertFalse(loadable.getIfPresent().isEmpty());
+    Assert.assertTrue(loadable.getIfPresent().isPresent());
     Assert.assertEquals(loadable.getOrLoad().join().get(), "Hello, Anton!");
 
     Loadable<String> lowercase = Loadable
