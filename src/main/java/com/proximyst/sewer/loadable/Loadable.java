@@ -113,10 +113,10 @@ public class Loadable<@NonNull T> {
         SewerSystem
             .<Loadable<Input>, Input>builder(
                 "loadable load",
-                in -> in.getOrLoad().join().orElse(null),
+                in -> in.getOrLoad().thenApply(opt -> opt.orElse(null)),
                 null,
                 NonNullFiltrationModule.getInstance())
-            .pipe("loadable pipeline", system)
+            .pipe("loadable pipeline", in -> system.pump(in).thenApply(res -> res.asOptional().orElse(null)))
             .build(),
         input
     );
@@ -195,7 +195,7 @@ public class Loadable<@NonNull T> {
         return this.resultFuture;
       }
 
-      this.resultFuture = ((SewerSystem<Object, T>) this.pipeline).pumpAsync(this.object, this.executor)
+      this.resultFuture = ((SewerSystem<Object, T>) this.pipeline).pump(this.object, this.executor)
           .thenApply(res -> {
             synchronized (this.lock) {
               this.state = new LoadableState.Loaded<>(res);

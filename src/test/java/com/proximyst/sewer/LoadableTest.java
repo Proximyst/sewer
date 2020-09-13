@@ -1,6 +1,7 @@
 package com.proximyst.sewer;
 
 import com.proximyst.sewer.loadable.Loadable;
+import com.proximyst.sewer.piping.ImmediatePipeHandler;
 import java.util.concurrent.TimeUnit;
 import org.junit.Assert;
 import org.junit.Test;
@@ -10,11 +11,11 @@ public class LoadableTest {
   public void basicLoading() {
     Loadable<String> loadable = Loadable
         .builder(
-            SewerSystem.builder("string", name -> "Hello, " + name + "!")
-                .pipe("wait", s -> {
+            SewerSystem.builder("string", ImmediatePipeHandler.of(name -> "Hello, " + name + "!"))
+                .pipe("wait", ImmediatePipeHandler.of(s -> {
                   Thread.sleep(50);
                   return s;
-                })
+                }))
                 .build(),
             "Anton"
         )
@@ -30,11 +31,11 @@ public class LoadableTest {
     Loadable<String> lowercase = Loadable
         .builder(
             SewerSystem
-                .<String, String>builder("lowercase", String::toLowerCase)
-                .pipe("wait", s -> {
+                .<String, String>builder("lowercase", ImmediatePipeHandler.of(String::toLowerCase))
+                .pipe("wait", ImmediatePipeHandler.of(s -> {
                   Thread.sleep(100);
                   return s;
-                })
+                }))
                 .build(),
             loadable
         )

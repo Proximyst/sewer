@@ -37,7 +37,7 @@ public class PipeResult<T> {
    * @param <T>       The type of the pipe's flow.
    * @return A failed result for the pipe.
    */
-  public static <T> Exceptional<T> exceptional(@NonNull String pipeName, @NonNull Exception exception) {
+  public static <T> Exceptional<T> exceptional(@NonNull String pipeName, @NonNull Throwable exception) {
     return new Exceptional<>(pipeName, exception);
   }
 
@@ -195,11 +195,11 @@ public class PipeResult<T> {
    */
   public static final class Exceptional<T> extends PipeResult<T> {
     @NonNull
-    private final Exception exception;
+    private final Throwable exception;
 
     private Exceptional(
         @NonNull String pipeName,
-        @NonNull Exception exception
+        @NonNull Throwable exception
     ) {
       super(pipeName);
       this.exception = exception;
@@ -209,7 +209,7 @@ public class PipeResult<T> {
      * @return The exception thrown by the pipe flow.
      */
     @NonNull
-    public Exception getException() {
+    public Throwable getException() {
       return exception;
     }
 

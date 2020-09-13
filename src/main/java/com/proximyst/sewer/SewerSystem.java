@@ -109,51 +109,31 @@ public class SewerSystem<Input, Output> {
    * Pump an {@link Input} through this system's {@link SewerPipe pipes}.
    *
    * @param input The input to flow through this system.
-   * @return A {@link PipeResult} with filters, flow, and exceptions taken into account.
-   */
-  @SuppressWarnings("unchecked")
-  @NonNull
-  public PipeResult<Output> pump(Input input) {
-    PipeResult<?> underways = null;
-    for (SewerPipe<?, ?> pipe : pipeline) {
-      if (underways == null) {
-        underways = ((SewerPipe<Input, ?>) pipe).flow(input);
-        continue;
-      }
-
-      underways = handleUnderways(underways, pipe);
-    }
-
-    assert underways != null;
-    return (PipeResult<Output>) underways;
-  }
-
-  /**
-   * Pump an {@link Input} through this system's {@link SewerPipe pipes}.
-   *
-   * @param input The input to flow through this system.
+   * @param executor The executor to use for the pipes, or {@code null} for the default executor.
    * @return A {@link PipeResult} with filters, flow, and exceptions taken into account, wrapped tidily in a {@link
    * CompletableFuture}.
    */
   @SuppressWarnings("unchecked")
   @NonNull
-  public CompletableFuture<PipeResult<Output>> pumpAsync(Input input, @Nullable Executor executor) {
-    CompletableFuture<PipeResult<?>> underways = null;
+  public CompletableFuture<PipeResult<Output>> pump(Input input, @Nullable Executor executor) {
+    CompletableFuture<? extends PipeResult<?>> underways = null;
     for (SewerPipe<?, ?> pipe : pipeline) {
       if (underways == null) {
-        underways = executor == null
-            ? CompletableFuture.supplyAsync(() -> ((SewerPipe<Input, ?>) pipe).flow(input))
-            : CompletableFuture.supplyAsync(() -> ((SewerPipe<Input, ?>) pipe).flow(input), executor);
+        try {
+          underways = ((SewerPipe<Input, ?>) pipe).flow(input);
+        } catch (Throwable ex) {
+          underways = CompletableFuture.completedFuture(PipeResult.exceptional(pipe.getPipeName(), ex));
+        }
         continue;
       }
 
       underways = executor == null
-          ? underways.thenApplyAsync(res -> this.handleUnderways(res, pipe))
-          : underways.thenApplyAsync(res -> this.handleUnderways(res, pipe), executor);
+          ? underways.thenComposeAsync(res -> this.handleUnderways(res, pipe))
+          : underways.thenComposeAsync(res -> this.handleUnderways(res, pipe), executor);
     }
 
     assert underways != null;
-    return (CompletableFuture<PipeResult<Output>>) (CompletableFuture<?>) underways;
+    return (CompletableFuture<PipeResult<Output>>) underways;
   }
 
   /**
@@ -164,8 +144,8 @@ public class SewerSystem<Input, Output> {
    * CompletableFuture}.
    */
   @NonNull
-  public CompletableFuture<PipeResult<Output>> pumpAsync(Input input) {
-    return pumpAsync(input, null);
+  public CompletableFuture<PipeResult<Output>> pump(Input input) {
+    return pump(input, null);
   }
 
   /**
@@ -177,14 +157,14 @@ public class SewerSystem<Input, Output> {
    */
   @NonNull
   @SuppressWarnings("unchecked")
-  private PipeResult<?> handleUnderways(@NonNull PipeResult<?> result, @NonNull SewerPipe<?, ?> pipe) {
+  private CompletableFuture<? extends PipeResult<?>> handleUnderways(@NonNull PipeResult<?> result, @NonNull SewerPipe<?, ?> pipe) {
     if (result.isSuccessful()) {
       return ((SewerPipe<Object, ?>) pipe).flow(((Success<Object>) result).getResult());
     } else if (result.isExceptional()) {
       handleException((Exceptional<?>) result);
-      return result;
+      return CompletableFuture.completedFuture(result);
     } else if (result.isFiltered()) {
-      return result;
+      return CompletableFuture.completedFuture(result);
     } else {
       throw new IllegalStateException("PipeResult type " + result.getClass().getName() + " is unknown");
     }
@@ -282,64 +262,6 @@ public class SewerSystem<Input, Output> {
         @Nullable FiltrationModule<NewOutput> postFlowFilter
     ) {
       return this.pipe(new SewerPipe<>(pipeName, handler, preFlowFilter, postFlowFilter));
-    }
-
-    /**
-     * Attach a system as a pipe to the system.
-     *
-     * @param pipeName    The name of the pipe to attach.
-     * @param pipeline    The pipeline to attach as if it is a pipe. This must take an instance of {@link Output} as
-     *                    input.
-     * @param <NewOutput> The new output for the system.
-     * @return This builder with the new pipe attached.
-     */
-    @NonNull
-    public <NewOutput> Builder<Input, NewOutput> pipe(
-        @NonNull String pipeName,
-        @NonNull SewerSystem<Output, NewOutput> pipeline
-    ) {
-      return this.pipe(pipeName, pipeline, null, null);
-    }
-
-    /**
-     * Attach a system as a pipe to the system.
-     *
-     * @param pipeName      The name of the pipe to attach.
-     * @param pipeline      The pipeline to attach as if it is a pipe. This must take an instance of {@link Output} as
-     *                      input.
-     * @param preFlowFilter The filter to run before the pipe. May be {@code null}.
-     * @param <NewOutput>   The new output for the system.
-     * @return This builder with the new pipe attached.
-     */
-    @NonNull
-    public <NewOutput> Builder<Input, NewOutput> pipe(
-        @NonNull String pipeName,
-        @NonNull SewerSystem<Output, NewOutput> pipeline,
-        @Nullable FiltrationModule<Output> preFlowFilter
-    ) {
-      return this.pipe(pipeName, pipeline, preFlowFilter, null);
-    }
-
-    /**
-     * Attach a system as a pipe to the system.
-     *
-     * @param pipeName       The name of the pipe to attach.
-     * @param pipeline       The pipeline to attach as if it is a pipe. This must take an instance of {@link Output} as
-     *                       input.
-     * @param preFlowFilter  The filter to run before the pipe. May be {@code null}.
-     * @param postFlowFilter The filter to run after the pipe. May be {@code null}.
-     * @param <NewOutput>    The new output for the system.
-     * @return This builder with the new pipe attached.
-     */
-    @NonNull
-    public <NewOutput> Builder<Input, NewOutput> pipe(
-        @NonNull String pipeName,
-        @NonNull SewerSystem<Output, NewOutput> pipeline,
-        @Nullable FiltrationModule<Output> preFlowFilter,
-        @Nullable FiltrationModule<NewOutput> postFlowFilter
-    ) {
-      return this.pipe(new SystemPipe<>(pipeName, preFlowFilter, postFlowFilter, pipeline))
-          .pipe(pipeName + " (SystemPipe)", res -> res.asSuccess().getResult());
     }
 
     /**
