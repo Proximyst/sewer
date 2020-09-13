@@ -13,7 +13,7 @@ cleaner code.
 The library is available on Bintray:
 
 ```kotlin
-val sewerVersion = "0.4.0"
+val sewerVersion = "0.5.0"
 
 repositories {
     maven("https://dl.bintray.com/proximyst/sewer")

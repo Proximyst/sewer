@@ -3,6 +3,7 @@ package com.proximyst.sewer;
 import com.proximyst.sewer.filtration.FiltrationModule;
 import com.proximyst.sewer.piping.PipeHandler;
 import com.proximyst.sewer.piping.PipeResult;
+import java.util.concurrent.CompletableFuture;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -64,21 +65,22 @@ public class SewerPipe<Input, Output> {
    * @return A {@link PipeResult} with filters, flow, and exceptions taken into account.
    */
   @NonNull
-  public PipeResult<Output> flow(Input input) {
+  public CompletableFuture<PipeResult<Output>> flow(Input input) {
     if (preFlowFilter != null && !preFlowFilter.allowFlow(input)) {
-      return PipeResult.beforeFilter(getPipeName());
+      return CompletableFuture.completedFuture(PipeResult.beforeFilter(getPipeName()));
     }
 
-    try {
-      Output output = handler.flow(input);
+    return handler.flow(input)
+        .handle((output, exception) -> {
+          if (exception != null) {
+            return PipeResult.exceptional(getPipeName(), exception);
+          }
 
-      if (postFlowFilter != null && !postFlowFilter.allowFlow(output)) {
-        return PipeResult.postFilter(getPipeName(), output);
-      }
+          if (postFlowFilter != null && !postFlowFilter.allowFlow(output)) {
+            return PipeResult.postFilter(getPipeName(), output);
+          }
 
-      return PipeResult.success(getPipeName(), output);
-    } catch (Exception ex) {
-      return PipeResult.exceptional(getPipeName(), ex);
-    }
+          return PipeResult.success(getPipeName(), output);
+        });
   }
 }

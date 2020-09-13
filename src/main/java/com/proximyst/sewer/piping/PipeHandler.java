@@ -1,5 +1,7 @@
 package com.proximyst.sewer.piping;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * The handler of a pipe.
  *
@@ -13,7 +15,6 @@ public interface PipeHandler<Input, Output> {
    *
    * @param input The input expected to flow through this handler to produce an output.
    * @return The output created by this handler.
-   * @throws Exception Any exception this handler may want to throw during its flow.
    */
-  Output flow(Input input) throws Exception;
+  CompletableFuture<Output> flow(Input input);
 }

@@ -10,7 +10,7 @@ public class SewerException extends RuntimeException {
   @NonNull
   private final String pipeName;
 
-  public SewerException(@NonNull String pipeName, @NonNull Exception cause) {
+  public SewerException(@NonNull String pipeName, @NonNull Throwable cause) {
     super(cause);
     this.pipeName = pipeName;
   }
