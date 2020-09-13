@@ -1,6 +1,7 @@
 package com.proximyst.sewer.piping;
 
 import java.util.concurrent.CompletableFuture;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 /**
  * The handler of a pipe.
@@ -16,5 +17,6 @@ public interface PipeHandler<Input, Output> {
    * @param input The input expected to flow through this handler to produce an output.
    * @return The output created by this handler.
    */
+  @NonNull
   CompletableFuture<Output> flow(Input input);
 }
