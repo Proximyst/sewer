@@ -1,5 +1,6 @@
 package com.proximyst.sewer.filtration;
 
+import java.util.concurrent.CompletableFuture;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.dataflow.qual.SideEffectFree;
 
@@ -16,7 +17,8 @@ public interface FiltrationModule<Input> {
    * @param input The input to check the flow of.
    * @return Whether the flow shall be allowed.
    */
-  boolean allowFlow(Input input);
+  @NonNull
+  CompletableFuture<@NonNull Boolean> allowFlow(Input input);
 
   /**
    * Compose this filtration module with another with a boolean AND.
@@ -27,7 +29,7 @@ public interface FiltrationModule<Input> {
   @NonNull
   @SideEffectFree
   default FiltrationModule<Input> and(@NonNull FiltrationModule<Input> module) {
-    return input -> this.allowFlow(input) && module.allowFlow(input);
+    return input -> this.allowFlow(input).thenCombine(module.allowFlow(input), (me, them) -> me && them);
   }
 
   /**
@@ -39,7 +41,7 @@ public interface FiltrationModule<Input> {
   @NonNull
   @SideEffectFree
   default FiltrationModule<Input> or(@NonNull FiltrationModule<Input> module) {
-    return input -> this.allowFlow(input) || module.allowFlow(input);
+    return input -> this.allowFlow(input).thenCombine(module.allowFlow(input), (me, them) -> me && them);
   }
 
   /**
@@ -51,7 +53,7 @@ public interface FiltrationModule<Input> {
   @NonNull
   @SideEffectFree
   default FiltrationModule<Input> xor(@NonNull FiltrationModule<Input> module) {
-    return input -> this.allowFlow(input) ^ module.allowFlow(input);
+    return input -> this.allowFlow(input).thenCombine(module.allowFlow(input), (me, them) -> me ^ them);
   }
 
   /**
@@ -62,6 +64,6 @@ public interface FiltrationModule<Input> {
   @NonNull
   @SideEffectFree
   default FiltrationModule<Input> not() {
-    return input -> !this.allowFlow(input);
+    return input -> this.allowFlow(input).thenApply(result -> !result);
   }
 }

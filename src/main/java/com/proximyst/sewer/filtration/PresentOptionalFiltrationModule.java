@@ -1,6 +1,7 @@
 package com.proximyst.sewer.filtration;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.dataflow.qual.Pure;
@@ -31,8 +32,9 @@ public final class PresentOptionalFiltrationModule<T> implements FiltrationModul
   }
 
   @Override
-  public boolean allowFlow(@Nullable Optional<@Nullable T> t) {
-    return t != null && t.isPresent();
+  @NonNull
+  public CompletableFuture<@NonNull Boolean> allowFlow(@Nullable Optional<@Nullable T> t) {
+    return CompletableFuture.completedFuture(t != null && t.isPresent());
   }
 
   @Override

@@ -1,5 +1,6 @@
 package com.proximyst.sewer.filtration;
 
+import java.util.concurrent.CompletableFuture;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.dataflow.qual.Pure;
@@ -29,8 +30,9 @@ public final class NonNullFiltrationModule<T> implements FiltrationModule<@Nulla
   }
 
   @Override
-  public boolean allowFlow(@Nullable T t) {
-    return t != null;
+  @NonNull
+  public CompletableFuture<@NonNull Boolean> allowFlow(@Nullable T t) {
+    return CompletableFuture.completedFuture(t != null);
   }
 
   @Override

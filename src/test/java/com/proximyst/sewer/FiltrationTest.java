@@ -1,6 +1,6 @@
 package com.proximyst.sewer;
 
-import com.proximyst.sewer.filtration.FiltrationModule;
+import com.proximyst.sewer.filtration.ImmediateFiltrationModule;
 import com.proximyst.sewer.piping.ImmediatePipeHandler;
 import com.proximyst.sewer.piping.PipeResult;
 import org.junit.Assert;
@@ -42,14 +42,14 @@ public class FiltrationTest {
     Assert.assertTrue(result.asExceptional().getException() instanceof RuntimeException);
   }
 
-  public enum Filters implements FiltrationModule<Integer> {
+  public enum Filters implements ImmediateFiltrationModule<Integer> {
     EVEN,
     ODD,
     NEGATIVE,
     ;
 
     @Override
-    public boolean allowFlow(Integer integer) {
+    public boolean allowFlowImmediately(Integer integer) {
       return (this == EVEN && integer % 2 == 0)
           || (this == ODD && integer % 2 != 0)
           || (this == NEGATIVE && integer < 0);

@@ -66,21 +66,28 @@ public class SewerPipe<Input, Output> {
    */
   @NonNull
   public CompletableFuture<PipeResult<Output>> flow(Input input) {
-    if (preFlowFilter != null && !preFlowFilter.allowFlow(input)) {
-      return CompletableFuture.completedFuture(PipeResult.beforeFilter(getPipeName()));
-    }
-
-    return handler.flow(input)
-        .handle((output, exception) -> {
-          if (exception != null) {
-            return PipeResult.exceptional(getPipeName(), exception);
+    return (preFlowFilter != null ? preFlowFilter.allowFlow(input) : CompletableFuture.completedFuture(true))
+        .<PipeResult<Output>>thenCompose(allow -> {
+          if (!allow) {
+            return CompletableFuture.completedFuture(PipeResult.beforeFilter(getPipeName()));
           }
 
-          if (postFlowFilter != null && !postFlowFilter.allowFlow(output)) {
-            return PipeResult.postFilter(getPipeName(), output);
+          return handler.flow(input).thenApply(result -> PipeResult.success(getPipeName(), result));
+        })
+        .thenCompose(result -> {
+          if (postFlowFilter != null && result.isSuccessful()) {
+            return postFlowFilter.allowFlow(result.asSuccess().getResult())
+                .thenApply(allow -> {
+                  if (allow) {
+                    return result;
+                  }
+
+                  return PipeResult.postFilter(getPipeName(), result.asSuccess().getResult());
+                });
           }
 
-          return PipeResult.success(getPipeName(), output);
-        });
+          return CompletableFuture.completedFuture(result);
+        })
+        .exceptionally(throwable -> PipeResult.exceptional(getPipeName(), throwable));
   }
 }
