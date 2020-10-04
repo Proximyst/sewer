@@ -16,15 +16,28 @@ import org.checkerframework.common.value.qual.MinLen;
  *
  * @param <Input>  The input type of this pipe.
  * @param <Output> The type returned by this pipe after all the {@link Module modules} have been flowed through.
+ * @since 0.1.0
  */
 public final class SewerPipe<Input, Output> {
   private final @NonNull String pipeName;
   private final @NonNull Module<?, ?> @NonNull @MinLen(1) [] modules;
 
+  /**
+   * @param pipeName The name of the pipe.
+   * @param module   The single module to use in this pipe.
+   * @see #SewerPipe(String, Module[])
+   * @since 0.7.0
+   */
   SewerPipe(@NonNull String pipeName, @NonNull Module<Input, Output> module) {
     this(pipeName, new Module<?, ?>[]{module});
   }
 
+  /**
+   * @param pipeName The name of the pipe.
+   * @param modules  All the modules in this pipe; the first pipe must accept {@link Input} and the last must output an
+   *                 {@link Output}.
+   * @since 0.7.0
+   */
   SewerPipe(
       @NonNull String pipeName,
       @NonNull Module<?, ?> @NonNull @MinLen(1) [] modules
@@ -42,6 +55,7 @@ public final class SewerPipe<Input, Output> {
    * @param <Input>  The input type for the pipe.
    * @param <Output> The output type for the pipe.
    * @return A new {@link Builder} to create a new {@link SewerPipe}.
+   * @since 0.7.0
    */
   public static <Input, Output> @NonNull Builder<Input, Output> builder(
       @NonNull @MinLen(1) String pipeName,
@@ -63,6 +77,7 @@ public final class SewerPipe<Input, Output> {
    * @param input The input to flow through.
    * @return A {@link CompletableFuture future-wrapped} {@link NamedPipeResult} of an {@link Output}. Be aware that this
    * is a <i>wrapper</i>, and is not an instance of {@link ThrowingResult} if some {@link Module} throws.
+   * @since 0.7.0
    */
   @SuppressWarnings("unchecked") // Required; we're trusting the constructors were called type-checked
   public @NonNull CompletableFuture<@NonNull NamedPipeResult<Output, ? extends PipeResult<Output>>> flow(Input input) {
@@ -100,15 +115,25 @@ public final class SewerPipe<Input, Output> {
    */
   @SuppressWarnings("unchecked") // Magic casts required to be type-safe for the user.
   public static class Builder<Input, Output> {
+    /**
+     * The name of the pipe.
+     */
     private final @NonNull String name;
 
     /**
      * The internal modules in this pipe.
      * <p>
      * There must be at least 1 module per pipe.
+     *
+     * @since 0.7.0
      */
     private final @NonNull @MinLen(1) List<@NonNull Module<?, ?>> modules;
 
+    /**
+     * @param name   The name of the pipe to be created.
+     * @param module The first module in this pipe.
+     * @since 0.7.0
+     */
     private Builder(
         @NonNull String name,
         @NonNull Module<Input, Output> module
@@ -124,6 +149,7 @@ public final class SewerPipe<Input, Output> {
      * @param module      The new module to add to the pipe.
      * @param <NewOutput> The new output type of the {@link SewerPipe} this will {@link #build() build}.
      * @return This builder for chaining.
+     * @since 0.7.0
      */
     public <NewOutput> @NonNull @This Builder<Input, NewOutput> pipe(@NonNull Module<Output, NewOutput> module) {
       this.modules.add(module);

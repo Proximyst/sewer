@@ -5,6 +5,8 @@ import org.checkerframework.dataflow.qual.Pure;
 
 /**
  * Internal state for {@link Loadable}s.
+ *
+ * @since 0.4.0
  */
 class LoadableState {
   /**
@@ -43,6 +45,9 @@ class LoadableState {
      */
     private final T item;
 
+    /**
+     * @param item The item to store in this state.
+     */
     public Loaded(T item) {
       this.item = item;
     }

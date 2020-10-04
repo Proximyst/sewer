@@ -8,10 +8,14 @@ import org.checkerframework.checker.nullness.qual.NonNull;
  * A {@link PipeResult} originating from a flow which threw a {@link Throwable}.
  *
  * @param <Ty> The output type.
+ * @since 0.7.0
  */
 public final class ThrowingResult<Ty> extends PipeResult<Ty> {
   private final @NonNull Throwable throwable;
 
+  /**
+   * @param throwable The {@link Throwable} this result represents.
+   */
   public ThrowingResult(@NonNull Throwable throwable) {
     this.throwable = throwable;
   }

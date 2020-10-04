@@ -9,6 +9,7 @@ import org.checkerframework.dataflow.qual.SideEffectFree;
  * The result of a pipe's flow.
  *
  * @param <T> The output type.
+ * @since 0.1.0
  */
 public abstract class PipeResult<T> {
   /**
@@ -19,12 +20,14 @@ public abstract class PipeResult<T> {
 
   /**
    * @return The result type as an {@link Optional}.
+   * @since 0.4.0
    */
   @SideEffectFree
   public abstract @NonNull Optional<@NonNull T> asOptional();
 
   /**
    * @return Whether the system or pipe may continue its operation.
+   * @since 0.7.0
    */
   @Pure
   public boolean mayContinue() {

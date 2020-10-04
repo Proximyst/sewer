@@ -20,6 +20,7 @@ import org.checkerframework.dataflow.qual.SideEffectFree;
  * accept tasks through an {@link Executor}.
  *
  * @param <T> The type to be loaded.
+ * @since 0.4.0
  */
 public class Loadable<T> {
   /**

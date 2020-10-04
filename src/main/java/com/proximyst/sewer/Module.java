@@ -15,6 +15,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
  *
  * @param <Input>  The type to accept when flowing through the module.
  * @param <Output> The type the module shall output.
+ * @since 0.7.0
  */
 @FunctionalInterface
 public interface Module<Input, Output> {

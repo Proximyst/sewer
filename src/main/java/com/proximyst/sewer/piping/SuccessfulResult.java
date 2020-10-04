@@ -9,10 +9,17 @@ import org.checkerframework.checker.nullness.qual.NonNull;
  *
  * @param <T> The type of the {@link PipeResult}.
  * @see #getResult()
+ * @since 0.7.0
  */
 public final class SuccessfulResult<T> extends PipeResult<T> {
+  /**
+   * The inner item this result has as output.
+   */
   private final T result;
 
+  /**
+   * @param result The item this result represents.
+   */
   public SuccessfulResult(T result) {
     this.result = result;
   }

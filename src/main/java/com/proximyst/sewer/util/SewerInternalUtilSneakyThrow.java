@@ -5,6 +5,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 /**
  * An internal class for sewer to sneaky throw {@link Throwable}s.
  *
+ * @since 0.7.0
  * @deprecated This is an internal class and should not be used.
  */
 @SuppressWarnings("DeprecatedIsStillUsed") // Only deprecated to warn users.

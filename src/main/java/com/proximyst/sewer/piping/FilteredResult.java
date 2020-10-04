@@ -7,6 +7,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
  * A result which has been filtered.
  *
  * @param <T> The output type.
+ * @since 0.7.0
  */
 public final class FilteredResult<T> extends PipeResult<T> {
   /**

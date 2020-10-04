@@ -17,10 +17,20 @@ import org.checkerframework.common.value.qual.MinLen;
  *
  * @param <Input>  The input type to accept.
  * @param <Output> The expected output type.
+ * @since 0.1.0
  */
 public class SewerSystem<Input, Output> {
+  /**
+   * All the pipes in this system.
+   *
+   * @since 0.7.0
+   */
   private final @NonNull SewerPipe<?, ?> @NonNull @MinLen(1) [] pipeline;
 
+  /**
+   * @param pipeline The pipes to use in this system.
+   * @since 0.7.0
+   */
   private SewerSystem(@NonNull SewerPipe<?, ?> @NonNull @MinLen(1) [] pipeline) {
     this.pipeline = pipeline;
   }
@@ -33,6 +43,7 @@ public class SewerSystem<Input, Output> {
    * @param <Input>  The input type for the first pipe.
    * @param <Output> The output type for the first pipe.
    * @return A new {@link Builder} to create a new {@link SewerSystem}.
+   * @since 0.7.0
    */
   public static <Input, Output> @NonNull Builder<Input, Output> builder(
       @NonNull SewerPipe<Input, Output> pipe
@@ -49,6 +60,7 @@ public class SewerSystem<Input, Output> {
    * @param <Input>  The input type for the first pipe.
    * @param <Output> The output type for the first pipe.
    * @return A new {@link Builder} to create a new {@link SewerSystem}.
+   * @since 0.7.0
    */
   public static <Input, Output> @NonNull Builder<Input, Output> builder(
       @NonNull @MinLen(1) String pipeName,
@@ -63,6 +75,7 @@ public class SewerSystem<Input, Output> {
    * @param input The input to flow through this system.
    * @return A {@link CompletableFuture future-wrapped} {@link NamedPipeResult} of an {@link Output}. Be aware that this
    * is a <i>wrapper</i>, and is not an instance of {@link ThrowingResult} if some {@link SewerPipe} throws.
+   * @since 0.7.0
    */
   @SuppressWarnings("unchecked")
   public @NonNull CompletableFuture<@NonNull NamedPipeResult<Output, ? extends PipeResult<Output>>> pump(
@@ -109,12 +122,15 @@ public class SewerSystem<Input, Output> {
      * The internal pipes in this system.
      * <p>
      * There must be at least 1 pipe per system.
+     *
+     * @since 0.7.0
      */
     private final @NonNull @MinLen(1) List<@NonNull SewerPipe<?, ?>> pipes;
 
-    private Builder(
-        @NonNull SewerPipe<Input, Output> pipe
-    ) {
+    /**
+     * @param pipe The first pipe to add in this system.
+     */
+    private Builder(@NonNull SewerPipe<Input, Output> pipe) {
       this.pipes = new ArrayList<>();
       this.pipes.add(pipe);
     }
@@ -139,6 +155,7 @@ public class SewerSystem<Input, Output> {
      * @param <NewOutput> The new output type of the {@link SewerSystem} this will {@link #build() build}.
      * @return This builder for chaining.
      * @see SewerPipe#builder(String, Module)
+     * @since 0.7.0
      */
     public <NewOutput> @NonNull @This Builder<Input, NewOutput> module(
         @NonNull String name,

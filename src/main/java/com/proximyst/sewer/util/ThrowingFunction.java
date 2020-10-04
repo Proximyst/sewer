@@ -8,6 +8,7 @@ import java.util.Objects;
  * @param <In>  The type of the input to the function.
  * @param <Out> The type of the result of the function.
  * @param <Thr> The type of the throwable of the function.
+ * @since 0.7.0
  */
 @FunctionalInterface
 public interface ThrowingFunction<In, Out, Thr extends Throwable> {

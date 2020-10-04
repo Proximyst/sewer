@@ -12,6 +12,7 @@ import org.checkerframework.dataflow.qual.SideEffectFree;
  *
  * @param <T>  The output type of the {@link PipeResult}.
  * @param <PR> The inner {@link PipeResult} whose output type is {@link T}.
+ * @since 0.7.0
  */
 public final class NamedPipeResult<T, PR extends PipeResult<T>> extends PipeResult<T> {
   /**
@@ -24,6 +25,10 @@ public final class NamedPipeResult<T, PR extends PipeResult<T>> extends PipeResu
    */
   private final @NonNull PR result;
 
+  /**
+   * @param pipeName The name of the pipe this result originates from.
+   * @param result   The wrapped result this represents.
+   */
   public NamedPipeResult(@NonNull String pipeName, @NonNull PR result) {
     this.pipeName = pipeName;
     this.result = result;
