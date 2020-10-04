@@ -2,6 +2,13 @@ package com.proximyst.sewer.util;
 
 import org.checkerframework.checker.nullness.qual.NonNull;
 
+/**
+ * An internal class for sewer to sneaky throw {@link Throwable}s.
+ *
+ * @deprecated This is an internal class and should not be used.
+ */
+@SuppressWarnings("DeprecatedIsStillUsed") // Only deprecated to warn users.
+@Deprecated
 public final class SewerInternalUtilSneakyThrow {
   private SewerInternalUtilSneakyThrow() throws IllegalAccessException {
     throw new IllegalAccessException(getClass().getSimpleName() + " cannot be instantiated.");

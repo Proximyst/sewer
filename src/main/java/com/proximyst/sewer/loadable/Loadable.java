@@ -1,12 +1,10 @@
 package com.proximyst.sewer.loadable;
 
-import com.proximyst.sewer.Module;
 import com.proximyst.sewer.SewerSystem;
 import com.proximyst.sewer.piping.NamedPipeResult;
 import com.proximyst.sewer.piping.PipeResult;
 import com.proximyst.sewer.piping.SuccessfulResult;
 import com.proximyst.sewer.piping.ThrowingResult;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -23,18 +21,16 @@ import org.checkerframework.dataflow.qual.SideEffectFree;
  *
  * @param <T> The type to be loaded.
  */
-public class Loadable<@NonNull T> {
+public class Loadable<T> {
   /**
    * The lock to the inner state.
    */
-  @NonNull
-  private final Object lock = new Object();
+  private final @NonNull Object lock = new Object();
 
   /**
    * The pipeline to load a {@link T}.
    */
-  @NonNull
-  private final SewerSystem<@NonNull ?, @NonNull T> pipeline;
+  private final @NonNull SewerSystem<?, T> pipeline;
 
   /**
    * The input value to load a {@link T}.
@@ -42,16 +38,14 @@ public class Loadable<@NonNull T> {
    * This is stored without a generic to avoid code smell. It must still be statically typed without errors in the
    * builder.
    */
-  @Nullable
-  private final Object object;
+  private final @Nullable Object object;
 
   /**
    * The local state of the loadable value.
    * <p>
    * This is locked by the {@link #lock}.
    */
-  @NonNull
-  private volatile LoadableState<PipeResult<T>> state = LoadableState.Unloaded.getInstance();
+  private volatile @NonNull LoadableState state = LoadableState.Unloaded.getInstance();
 
   /**
    * The {@link CompletableFuture} for the state.
@@ -59,11 +53,10 @@ public class Loadable<@NonNull T> {
    * If this is {@code null}, it will only be modified by one caller as the rest are locked by the {@link #lock} using a
    * {@code synchronized} block.
    */
-  @MonotonicNonNull
-  private CompletableFuture<PipeResult<T>> resultFuture = null;
+  private @MonotonicNonNull CompletableFuture<@NonNull PipeResult<T>> resultFuture = null;
 
   private Loadable(
-      @NonNull SewerSystem<@NonNull ?, @NonNull T> pipeline,
+      @NonNull SewerSystem<?, T> pipeline,
       @Nullable Object object
   ) {
     this.pipeline = pipeline;
@@ -80,8 +73,7 @@ public class Loadable<@NonNull T> {
    * @param <Output> The type of the {@link Loadable}.
    * @return A new {@link Builder} to create a new {@link Loadable}.
    */
-  @NonNull
-  public static <Input, Output> Builder<Input, Output> builder(
+  public static <Input, Output> @NonNull Builder<Input, Output> builder(
       @NonNull SewerSystem<Input, Output> system,
       Input input
   ) {
@@ -100,10 +92,9 @@ public class Loadable<@NonNull T> {
    * @param <Output> The type of the {@link Loadable}.
    * @return A new {@link Builder} to create a new {@link Loadable}.
    */
-  @NonNull
-  public static <Input, Output> Builder<Loadable<Input>, Output> builder(
+  public static <Input, Output> @NonNull Builder<@NonNull Loadable<Input>, Output> builder(
       @NonNull SewerSystem<Input, Output> system,
-      Loadable<Input> input
+      @NonNull Loadable<Input> input
   ) {
     return new Builder<>(
         SewerSystem
@@ -112,7 +103,6 @@ public class Loadable<@NonNull T> {
                 in -> in.getOrLoad()
                     .thenApply(optional -> new SuccessfulResult<>(optional.orElse(null)))
             )
-            .module("filter null", Module.filtering(Objects::nonNull))
             .module("loadable pipeline", in -> system.pump(in).thenApply(NamedPipeResult::getResult))
             .build(),
         input
@@ -143,8 +133,9 @@ public class Loadable<@NonNull T> {
    * @see #isLoaded()
    * @see #getIfPresent()
    */
+  @SuppressWarnings("unchecked")
   @SideEffectFree
-  public Optional<@NonNull PipeResult<T>> getResultIfPresent() {
+  public @NonNull Optional<@NonNull PipeResult<T>> getResultIfPresent() {
     if (isLoaded()) {
       return Optional.of(((LoadableState.Loaded<PipeResult<T>>) state).getItem());
     }
@@ -157,13 +148,16 @@ public class Loadable<@NonNull T> {
    * <p>
    * If this has not yet been loaded, it will not initiate loading. <i>Only</i> a check is performed before returning
    * its value.
+   * <p>
+   * This will return an empty {@link Optional} for results which are {@code null}. Either use non-null values only, or
+   * depend on {@link #isLoaded}.
    *
    * @return Whether the internal state is filled with a loaded value.
    * @see #isLoaded()
    * @see #getResultIfPresent()
    */
   @SideEffectFree
-  public Optional<T> getIfPresent() {
+  public @NonNull Optional<@NonNull T> getIfPresent() {
     return getResultIfPresent()
         .filter(PipeResult::isSuccessful)
         .flatMap(PipeResult::asOptional);
@@ -182,7 +176,7 @@ public class Loadable<@NonNull T> {
    */
   // There is no clean way to avoid an input type for the loadable without unchecked casts.
   @SuppressWarnings("unchecked")
-  public CompletableFuture<@NonNull PipeResult<T>> getOrLoadResult() {
+  public @NonNull CompletableFuture<@NonNull PipeResult<T>> getOrLoadResult() {
     if (this.resultFuture != null) {
       return this.resultFuture;
     }
@@ -214,12 +208,15 @@ public class Loadable<@NonNull T> {
    * If the loading process threw an {@link Exception}, the future will be completed with it. Any {@link
    * CompletableFuture#join()} will therefore also throw this {@link Exception}. Any {@code null} values will be thrown
    * out, and if it has been filtered out, {@link Optional#empty()} is returned.
+   * <p>
+   * This will return an empty {@link Optional} for results which are {@code null}. Either use non-null values only, or
+   * depend on {@link #isLoaded}.
    *
    * @return A future with the returned value of the loading process.
    * @see #isLoaded()
    * @see #getOrLoadResult()
    */
-  public CompletableFuture<@NonNull Optional<T>> getOrLoad() {
+  public @NonNull CompletableFuture<@NonNull Optional<@NonNull T>> getOrLoad() {
     return getOrLoadResult().thenCompose(res -> {
       if (res instanceof ThrowingResult) {
         CompletableFuture<Optional<T>> future = new CompletableFuture<>();
@@ -238,9 +235,7 @@ public class Loadable<@NonNull T> {
    * @param <Output> The output type of the entire loadable. This does not change.
    */
   public static class Builder<Input, Output> {
-    @NonNull
-    private final SewerSystem<Input, Output> pipeline;
-
+    private final @NonNull SewerSystem<Input, Output> pipeline;
     private final Input input;
 
     private Builder(
@@ -256,7 +251,7 @@ public class Loadable<@NonNull T> {
      *
      * @return A new {@link Loadable} akin this builder.
      */
-    public Loadable<Output> build() {
+    public @NonNull Loadable<Output> build() {
       return new Loadable<>(
           this.pipeline,
           this.input

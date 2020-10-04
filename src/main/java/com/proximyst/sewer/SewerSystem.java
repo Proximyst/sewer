@@ -25,12 +25,31 @@ public class SewerSystem<Input, Output> {
     this.pipeline = pipeline;
   }
 
+  /**
+   * Create a new builder to build an instance of {@link SewerSystem}, taking an {@link Input} to return an {@link
+   * Output}.
+   *
+   * @param pipe     The pipe to add as the first pipe of the system.
+   * @param <Input>  The input type for the first pipe.
+   * @param <Output> The output type for the first pipe.
+   * @return A new {@link Builder} to create a new {@link SewerSystem}.
+   */
   public static <Input, Output> @NonNull Builder<Input, Output> builder(
-      @NonNull SewerPipe<Input, Output> module
+      @NonNull SewerPipe<Input, Output> pipe
   ) {
-    return new Builder<>(module);
+    return new Builder<>(pipe);
   }
 
+  /**
+   * Create a new builder to build an instance of {@link SewerSystem}, taking an {@link Input} to return an {@link
+   * Output}.
+   *
+   * @param pipeName The name of the first pipe to add to the system.
+   * @param module   The single module the first pipe of the system shall consist of.
+   * @param <Input>  The input type for the first pipe.
+   * @param <Output> The output type for the first pipe.
+   * @return A new {@link Builder} to create a new {@link SewerSystem}.
+   */
   public static <Input, Output> @NonNull Builder<Input, Output> builder(
       @NonNull @MinLen(1) String pipeName,
       @NonNull Module<Input, Output> module
@@ -42,11 +61,13 @@ public class SewerSystem<Input, Output> {
    * Pump an {@link Input} through this system's {@link SewerPipe pipes}.
    *
    * @param input The input to flow through this system.
-   * @return TODO
+   * @return A {@link CompletableFuture future-wrapped} {@link NamedPipeResult} of an {@link Output}. Be aware that this
+   * is a <i>wrapper</i>, and is not an instance of {@link ThrowingResult} if some {@link SewerPipe} throws.
    */
   @SuppressWarnings("unchecked")
   public @NonNull CompletableFuture<@NonNull NamedPipeResult<Output, ? extends PipeResult<Output>>> pump(
-      final Input input) {
+      final Input input
+  ) {
     CompletableFuture<NamedPipeResult<?, ? extends PipeResult<?>>> underways = null;
     for (SewerPipe<?, ?> pipe : pipeline) {
       if (underways == null) {
@@ -76,8 +97,19 @@ public class SewerSystem<Input, Output> {
         Objects.requireNonNull(underways);
   }
 
+  /**
+   * A builder to create a new {@link SewerSystem} which accepts an {@link Input} and returns an {@link Output}.
+   *
+   * @param <Input>  The type to accept as input.
+   * @param <Output> The type to accept as output.
+   */
   @SuppressWarnings("unchecked") // Magic casts required to be type-safe for the user.
   public static class Builder<Input, Output> {
+    /**
+     * The internal pipes in this system.
+     * <p>
+     * There must be at least 1 pipe per system.
+     */
     private final @NonNull @MinLen(1) List<@NonNull SewerPipe<?, ?>> pipes;
 
     private Builder(
@@ -87,16 +119,39 @@ public class SewerSystem<Input, Output> {
       this.pipes.add(pipe);
     }
 
+    /**
+     * Add a pipe to the system, and migrate the output type to its output type.
+     *
+     * @param pipe        The pipe to add.
+     * @param <NewOutput> The new output type of the {@link SewerSystem} this will {@link #build() build}.
+     * @return This builder for chaining.
+     */
     public <NewOutput> @NonNull @This Builder<Input, NewOutput> pipe(@NonNull SewerPipe<Output, NewOutput> pipe) {
       this.pipes.add(pipe);
       return (Builder<Input, NewOutput>) this;
     }
 
-    public <NewOutput> @NonNull @This Builder<Input, NewOutput> module(@NonNull String name,
-        @NonNull Module<Output, NewOutput> module) {
+    /**
+     * Add a pipe to the system, and migrate the output type to its output type.
+     *
+     * @param name        The name of the new pipe to add.
+     * @param module      The single module the pipe shall consist of.
+     * @param <NewOutput> The new output type of the {@link SewerSystem} this will {@link #build() build}.
+     * @return This builder for chaining.
+     * @see SewerPipe#builder(String, Module)
+     */
+    public <NewOutput> @NonNull @This Builder<Input, NewOutput> module(
+        @NonNull String name,
+        @NonNull Module<Output, NewOutput> module
+    ) {
       return this.pipe(new SewerPipe<>(name, module));
     }
 
+    /**
+     * Build a new {@link SewerSystem}, taking an {@link Input} in exchange for an {@link Output}.
+     *
+     * @return A new {@link SewerSystem} with the pipes added through this builder.
+     */
     public @NonNull SewerSystem<Input, Output> build() {
       return new SewerSystem<>(pipes.toArray(new SewerPipe[0]));
     }
