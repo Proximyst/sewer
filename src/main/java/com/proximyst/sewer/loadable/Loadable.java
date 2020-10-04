@@ -37,7 +37,7 @@ public class Loadable<T> {
    * The input value to load a {@link T}.
    * <p>
    * This is stored without a generic to avoid code smell. It must still be statically typed without errors in the
-   * builder.
+   * constructor methods.
    */
   private final @Nullable Object object;
 
@@ -65,6 +65,51 @@ public class Loadable<T> {
   }
 
   /**
+   * Create a new {@link Loadable}.
+   *
+   * @param system   The {@link SewerSystem} pipeline to use for loading the value.
+   * @param input    The {@link Input} value for loading the value.
+   * @param <Input>  The input to accept to load the value. This is not set to {@code null} and is therefore not
+   *                 recommended to be a large value one wants garbage collected.
+   * @param <Output> The type of the {@link Loadable}.
+   * @return A new {@link Loadable}.
+   */
+  public static <Input, Output> @NonNull Loadable<Output> of(
+      @NonNull SewerSystem<Input, Output> system,
+      Input input
+  ) {
+    return new Loadable<>(system, input);
+  }
+
+  /**
+   * Create a new {@link Loadable}.
+   *
+   * @param system        The {@link SewerSystem} pipeline to use for loading the value.
+   * @param inputLoadable The {@link Input} value for loading the value in the form of another {@link Loadable}. The
+   *                      value must therefore be loaded through that before it can be loaded with this. If the other
+   *                      {@link Loadable} is not already loaded, this will wait for it to load.
+   * @param <Input>       The input to accept to load the value. This is not set to {@code null} and is therefore not
+   *                      recommended to be a large value one wants garbage collected.
+   * @param <Output>      The type of the {@link Loadable}.
+   * @return A new {@link Loadable}.
+   */
+  public static <Input, Output> @NonNull Loadable<Output> of(
+      @NonNull SewerSystem<Input, Output> system,
+      @NonNull Loadable<Input> inputLoadable
+  ) {
+    return new Loadable<>(
+        SewerSystem
+            .<Loadable<Input>, Input>builder("input loadable load",
+                in -> in.getOrLoad()
+                    .thenApply(optional -> new SuccessfulResult<>(optional.orElse(null)))
+            )
+            .module("output loadable load", in -> system.pump(in).thenApply(NamedPipeResult::getResult))
+            .build(),
+        inputLoadable
+    );
+  }
+
+  /**
    * Create a new builder.
    *
    * @param system   The {@link SewerSystem} pipeline to use for loading the value.
@@ -73,7 +118,10 @@ public class Loadable<T> {
    *                 recommended to be a large value one wants garbage collected.
    * @param <Output> The type of the {@link Loadable}.
    * @return A new {@link Builder} to create a new {@link Loadable}.
+   * @see #of(SewerSystem, Object)
+   * @deprecated Use {@link #of(SewerSystem, Object)} instead.
    */
+  @Deprecated
   public static <Input, Output> @NonNull Builder<Input, Output> builder(
       @NonNull SewerSystem<Input, Output> system,
       Input input
@@ -92,7 +140,10 @@ public class Loadable<T> {
    *                 recommended to be a large value one wants garbage collected.
    * @param <Output> The type of the {@link Loadable}.
    * @return A new {@link Builder} to create a new {@link Loadable}.
+   * @see #of(SewerSystem, Loadable)
+   * @deprecated Use {@link #of(SewerSystem, Loadable)} instead.
    */
+  @Deprecated
   public static <Input, Output> @NonNull Builder<@NonNull Loadable<Input>, Output> builder(
       @NonNull SewerSystem<Input, Output> system,
       @NonNull Loadable<Input> input
@@ -234,7 +285,11 @@ public class Loadable<T> {
    *
    * @param <Input>  The input type of the entire loadable. This does not change.
    * @param <Output> The output type of the entire loadable. This does not change.
+   * @see #of(SewerSystem, Loadable)
+   * @see #of(SewerSystem, Object)
+   * @deprecated Use the constructor methods instead.
    */
+  @Deprecated
   public static class Builder<Input, Output> {
     private final @NonNull SewerSystem<Input, Output> pipeline;
     private final Input input;
