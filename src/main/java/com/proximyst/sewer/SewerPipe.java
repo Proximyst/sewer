@@ -1,93 +1,107 @@
 package com.proximyst.sewer;
 
-import com.proximyst.sewer.filtration.FiltrationModule;
-import com.proximyst.sewer.piping.PipeHandler;
+import com.proximyst.sewer.piping.NamedPipeResult;
 import com.proximyst.sewer.piping.PipeResult;
+import com.proximyst.sewer.piping.ThrowingResult;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import org.checkerframework.common.returnsreceiver.qual.This;
+import org.checkerframework.common.value.qual.MinLen;
 
 /**
- * A pipe with an expected {@link Input} and {@link Output}, potentially with {@link FiltrationModule}s.
+ * A pipe with an expected {@link Input} and {@link Output}.
  *
  * @param <Input>  The input type to give the {@link PipeHandler}.
  * @param <Output> The type returned by the {@link PipeHandler}.
  */
-public class SewerPipe<Input, Output> {
-  @NonNull
-  private final String pipeName;
+public final class SewerPipe<Input, Output> {
+  private final @NonNull String pipeName;
+  private final @NonNull Module<?, ?> @NonNull @MinLen(1) [] modules;
 
-  @NonNull
-  private final PipeHandler<Input, Output> handler;
-
-  @Nullable
-  private final FiltrationModule<Input> preFlowFilter;
-
-  @Nullable
-  private final FiltrationModule<Output> postFlowFilter;
-
-  public SewerPipe(@NonNull String pipeName, @NonNull PipeHandler<Input, Output> handler) {
-    this(pipeName, handler, null, null);
+  SewerPipe(@NonNull String pipeName, @NonNull Module<Input, Output> module) {
+    this(pipeName, new Module<?, ?>[]{module});
   }
 
-  public SewerPipe(
+  SewerPipe(
       @NonNull String pipeName,
-      @NonNull PipeHandler<Input, Output> handler,
-      @Nullable FiltrationModule<Input> preFlowFilter
-  ) {
-    this(pipeName, handler, preFlowFilter, null);
-  }
-
-  public SewerPipe(
-      @NonNull String pipeName,
-      @NonNull PipeHandler<Input, Output> handler,
-      @Nullable FiltrationModule<Input> preFlowFilter,
-      @Nullable FiltrationModule<Output> postFlowFilter
+      @NonNull Module<?, ?> @NonNull @MinLen(1) [] modules
   ) {
     this.pipeName = pipeName;
-    this.handler = handler;
-    this.preFlowFilter = preFlowFilter;
-    this.postFlowFilter = postFlowFilter;
+    this.modules = modules;
+  }
+
+  public static <Input, Output> @NonNull Builder<Input, Output> builder(
+      @NonNull @MinLen(1) String pipeName,
+      @NonNull Module<Input, Output> module
+  ) {
+    return new Builder<>(pipeName, module);
   }
 
   /**
    * @return The identifying name of this pipe.
    */
-  @NonNull
-  public String getPipeName() {
-    return pipeName;
+  public @NonNull String getPipeName() {
+    return this.pipeName;
   }
 
   /**
    * Flow an {@link Input} through this pipe's {@link PipeHandler}.
    *
    * @param input The input to flow through.
-   * @return A {@link PipeResult} with filters, flow, and exceptions taken into account.
+   * @return A {@link CompletableFuture future-wrapped} {@link PipeResult} of the {@link Output}.
    */
-  @NonNull
-  public CompletableFuture<PipeResult<Output>> flow(Input input) {
-    return (preFlowFilter != null ? preFlowFilter.allowFlow(input) : CompletableFuture.completedFuture(true))
-        .<PipeResult<Output>>thenCompose(allow -> {
-          if (!allow) {
-            return CompletableFuture.completedFuture(PipeResult.beforeFilter(getPipeName()));
-          }
+  @SuppressWarnings("unchecked") // Required; we're trusting the constructors were called type-checked
+  public @NonNull CompletableFuture<@NonNull NamedPipeResult<Output, ? extends PipeResult<Output>>> flow(Input input) {
+    CompletableFuture<NamedPipeResult<?, ? extends PipeResult<?>>> future = null;
+    for (Module<?, ?> module : this.modules) {
+      if (future == null) {
+        future = ((Module<Input, ? extends PipeResult<?>>) module).flow(input)
+            .thenApply(output -> new NamedPipeResult<>(this.getPipeName(), output));
+        continue;
+      }
 
-          return handler.flow(input).thenApply(result -> PipeResult.success(getPipeName(), result));
-        })
-        .thenCompose(result -> {
-          if (postFlowFilter != null && result.isSuccessful()) {
-            return postFlowFilter.allowFlow(result.asSuccess().getResult())
-                .thenApply(allow -> {
-                  if (allow) {
-                    return result;
-                  }
+      final CompletableFuture<NamedPipeResult<?, ? extends PipeResult<?>>> preModificationFuture = future;
+      future = future.thenCompose(res -> {
+        if (!res.mayContinue()) {
+          return preModificationFuture;
+        }
 
-                  return PipeResult.postFilter(getPipeName(), result.asSuccess().getResult());
-                });
-          }
+        return ((Module<Object, ?>) module).flow(res.asOptional().orElse(null))
+            .thenApply(output -> new NamedPipeResult<>(this.getPipeName(), output));
+      });
+    }
 
-          return CompletableFuture.completedFuture(result);
-        })
-        .exceptionally(throwable -> PipeResult.exceptional(getPipeName(), throwable));
+    // #requireNonNull because there is always at least 1 module.
+    return (CompletableFuture<NamedPipeResult<Output, ? extends PipeResult<Output>>>) (CompletableFuture<?>)
+        Objects.requireNonNull(future)
+            .exceptionally(throwable ->
+                new NamedPipeResult<>(this.getPipeName(), new ThrowingResult<Output>(throwable)));
+  }
+
+  @SuppressWarnings("unchecked") // Magic casts required to be type-safe for the user.
+  public static class Builder<Input, Output> {
+    private final @NonNull String name;
+    private final @NonNull @MinLen(1) List<@NonNull Module<?, ?>> modules;
+
+    private Builder(
+        @NonNull String name,
+        @NonNull Module<Input, Output> module
+    ) {
+      this.name = name;
+      this.modules = new ArrayList<>();
+      this.modules.add(module);
+    }
+
+    public <NewOutput> @NonNull @This Builder<Input, NewOutput> pipe(@NonNull Module<Output, NewOutput> module) {
+      this.modules.add(module);
+      return (Builder<Input, NewOutput>) this;
+    }
+
+    public @NonNull SewerPipe<Input, Output> build() {
+      return new SewerPipe<>(name, modules.toArray(new Module<?, ?>[0]));
+    }
   }
 }

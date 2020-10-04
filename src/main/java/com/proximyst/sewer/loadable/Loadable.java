@@ -1,8 +1,12 @@
 package com.proximyst.sewer.loadable;
 
+import com.proximyst.sewer.Module;
 import com.proximyst.sewer.SewerSystem;
-import com.proximyst.sewer.filtration.NonNullFiltrationModule;
+import com.proximyst.sewer.piping.NamedPipeResult;
 import com.proximyst.sewer.piping.PipeResult;
+import com.proximyst.sewer.piping.SuccessfulResult;
+import com.proximyst.sewer.piping.ThrowingResult;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -42,12 +46,6 @@ public class Loadable<@NonNull T> {
   private final Object object;
 
   /**
-   * The executor on which to run the loading.
-   */
-  @Nullable
-  private final Executor executor;
-
-  /**
    * The local state of the loadable value.
    * <p>
    * This is locked by the {@link #lock}.
@@ -66,12 +64,10 @@ public class Loadable<@NonNull T> {
 
   private Loadable(
       @NonNull SewerSystem<@NonNull ?, @NonNull T> pipeline,
-      @Nullable Object object,
-      @Nullable Executor executor
+      @Nullable Object object
   ) {
     this.pipeline = pipeline;
     this.object = object;
-    this.executor = executor;
   }
 
   /**
@@ -113,10 +109,11 @@ public class Loadable<@NonNull T> {
         SewerSystem
             .<Loadable<Input>, Input>builder(
                 "loadable load",
-                in -> in.getOrLoad().thenApply(opt -> opt.orElse(null)),
-                null,
-                NonNullFiltrationModule.getInstance())
-            .pipe("loadable pipeline", in -> system.pump(in).thenApply(res -> res.asOptional().orElse(null)))
+                in -> in.getOrLoad()
+                    .thenApply(optional -> new SuccessfulResult<>(optional.orElse(null)))
+            )
+            .module("filter null", Module.filtering(Objects::nonNull))
+            .module("loadable pipeline", in -> system.pump(in).thenApply(NamedPipeResult::getResult))
             .build(),
         input
     );
@@ -169,7 +166,7 @@ public class Loadable<@NonNull T> {
   public Optional<T> getIfPresent() {
     return getResultIfPresent()
         .filter(PipeResult::isSuccessful)
-        .map(res -> res.asSuccess().getResult());
+        .flatMap(PipeResult::asOptional);
   }
 
   /**
@@ -195,7 +192,7 @@ public class Loadable<@NonNull T> {
         return this.resultFuture;
       }
 
-      this.resultFuture = ((SewerSystem<Object, T>) this.pipeline).pump(this.object, this.executor)
+      this.resultFuture = ((SewerSystem<Object, T>) this.pipeline).pump(this.object)
           .thenApply(res -> {
             synchronized (this.lock) {
               this.state = new LoadableState.Loaded<>(res);
@@ -224,9 +221,9 @@ public class Loadable<@NonNull T> {
    */
   public CompletableFuture<@NonNull Optional<T>> getOrLoad() {
     return getOrLoadResult().thenCompose(res -> {
-      if (res.isExceptional()) {
+      if (res instanceof ThrowingResult) {
         CompletableFuture<Optional<T>> future = new CompletableFuture<>();
-        future.completeExceptionally(res.asExceptional().getException());
+        future.completeExceptionally(((ThrowingResult<?>) res).getThrowable());
         return future;
       }
 
@@ -246,28 +243,12 @@ public class Loadable<@NonNull T> {
 
     private final Input input;
 
-    @Nullable
-    private Executor executor = null;
-
     private Builder(
         @NonNull SewerSystem<Input, Output> pipeline,
         Input input
     ) {
       this.pipeline = pipeline;
       this.input = input;
-    }
-
-    /**
-     * Set the {@link Executor} of the {@link Loadable}.
-     * <p>
-     * A value of {@code null} will make it execute on the default {@link Executor}.
-     *
-     * @param executor The {@link Executor} to use, or {@code null} to use the default for the system.
-     * @return This builder with the new executor set.
-     */
-    public Builder<Input, Output> executor(@Nullable Executor executor) {
-      this.executor = executor;
-      return this;
     }
 
     /**
@@ -278,8 +259,7 @@ public class Loadable<@NonNull T> {
     public Loadable<Output> build() {
       return new Loadable<>(
           this.pipeline,
-          this.input,
-          this.executor
+          this.input
       );
     }
   }
