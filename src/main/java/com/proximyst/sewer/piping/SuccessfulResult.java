@@ -4,6 +4,12 @@ import java.util.Objects;
 import java.util.Optional;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
+/**
+ * A successful {@link PipeResult}, originating from a successful flow.
+ *
+ * @param <T> The type of the {@link PipeResult}.
+ * @see #getResult()
+ */
 public final class SuccessfulResult<T> extends PipeResult<T> {
   private final T result;
 
@@ -11,20 +17,32 @@ public final class SuccessfulResult<T> extends PipeResult<T> {
     this.result = result;
   }
 
+  /**
+   * @return The result of the flow.
+   */
   public T getResult() {
     return this.result;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NonNull Optional<@NonNull T> asOptional() {
     return Optional.ofNullable(this.result);
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean isSuccessful() {
     return true;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -37,11 +55,17 @@ public final class SuccessfulResult<T> extends PipeResult<T> {
     return Objects.equals(getResult(), that.getResult());
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Objects.hash(this.getResult());
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     return "SuccessfulResult{" +

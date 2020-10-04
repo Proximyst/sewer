@@ -4,6 +4,11 @@ import java.util.Objects;
 import java.util.Optional;
 import org.checkerframework.checker.nullness.qual.NonNull;
 
+/**
+ * A {@link PipeResult} originating from a flow which threw a {@link Throwable}.
+ *
+ * @param <Ty> The output type.
+ */
 public final class ThrowingResult<Ty> extends PipeResult<Ty> {
   private final @NonNull Throwable throwable;
 
@@ -11,20 +16,32 @@ public final class ThrowingResult<Ty> extends PipeResult<Ty> {
     this.throwable = throwable;
   }
 
+  /**
+   * @return The thrown {@link Throwable} in the flow.
+   */
   public @NonNull Throwable getThrowable() {
     return this.throwable;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean isSuccessful() {
     return false;
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public @NonNull Optional<@NonNull Ty> asOptional() {
     return Optional.empty();
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -37,11 +54,17 @@ public final class ThrowingResult<Ty> extends PipeResult<Ty> {
     return getThrowable().equals(that.getThrowable());
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public int hashCode() {
     return Objects.hash(this.getThrowable());
   }
 
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public String toString() {
     return "ThrowableResult{" +
